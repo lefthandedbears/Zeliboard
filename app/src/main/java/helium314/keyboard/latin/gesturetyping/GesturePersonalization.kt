@@ -102,6 +102,7 @@ class GesturePersonalization private constructor(context: Context) {
 
         @Volatile private var instance: GesturePersonalization? = null
 
+        @JvmStatic
         fun getInstance(context: Context): GesturePersonalization =
             instance ?: synchronized(this) {
                 instance ?: GesturePersonalization(context).also { instance = it }
