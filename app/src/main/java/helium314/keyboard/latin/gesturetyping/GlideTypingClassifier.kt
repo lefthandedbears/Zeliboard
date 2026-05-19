@@ -67,11 +67,12 @@ object GlideTypingClassifier {
         // Resample the gesture to a fixed-length path
         val (gestureX, gestureY) = resamplePath(rawX, rawY, count, RESAMPLE_COUNT)
 
-        // Determine start / end key constraints from the gesture endpoints
+        // Determine start key constraint from the gesture start point
         val firstKey = nearestKey(rawX[0], rawY[0], keyboard)
-        val lastKey  = nearestKey(rawX[count - 1], rawY[count - 1], keyboard)
         val startCode = firstKey?.code?.let { Character.toLowerCase(it) } ?: 0
-        val endCode   = lastKey?.code?.let { Character.toLowerCase(it) } ?: 0
+
+        // Normalise frequency relative to the highest-scoring candidate in this batch
+        val maxCandidateScore = candidates.maxOf { it.mScore.toLong() }.toFloat().coerceAtLeast(1f)
 
         val scored = mutableListOf<Pair<SuggestedWordInfo, Float>>()
 
@@ -79,9 +80,8 @@ object GlideTypingClassifier {
             val word = wordInfo.mWord.lowercase()
             if (word.length < 2) continue
 
-            // Hard filter by first / last letter to prune search space quickly
+            // Hard filter by first letter only — shape scoring handles the rest
             if (startCode != 0 && word[0].code != startCode) continue
-            if (endCode   != 0 && word.last().code != endCode) continue
 
             val template = buildTemplate(word, keyboard) ?: continue
             val (tmplX, tmplY) = resamplePath(template.first, template.second, template.first.size, RESAMPLE_COUNT)
@@ -90,8 +90,8 @@ object GlideTypingClassifier {
             // Gaussian score: 1.0 = perfect shape match, approaches 0 as dist grows
             val shapeScore = exp(-(shapeDist * shapeDist) / (2f * SIGMA * SIGMA))
 
-            // Combine shape score with dictionary frequency (normalised 0-1)
-            val freqNorm = (wordInfo.mScore.toFloat() / 255f).coerceIn(0f, 1f)
+            // Combine shape score with dictionary frequency (normalised relative to batch max)
+            val freqNorm = (wordInfo.mScore.toFloat() / maxCandidateScore).coerceIn(0f, 1f)
             val combined = shapeScore * (0.7f + 0.3f * freqNorm)
 
             if (combined > MIN_SCORE) {
