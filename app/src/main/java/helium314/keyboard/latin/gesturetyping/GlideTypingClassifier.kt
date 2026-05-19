@@ -15,9 +15,6 @@ import helium314.keyboard.latin.common.InputPointers
 import helium314.keyboard.latin.dictionary.Dictionary
 import kotlin.math.exp
 import kotlin.math.hypot
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.sqrt
 
 /**
  * Statistical glide/swipe typing classifier for Zeliboard.
@@ -226,7 +223,4 @@ object GlideTypingClassifier {
         return best
     }
 
-    // ── Kotlin extensions to bridge Java int[] ─────────────────────────────
-
-    private fun hypot(a: Float, b: Float) = sqrt(a * a + b * b)
 }

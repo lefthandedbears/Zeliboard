@@ -8,8 +8,6 @@ package helium314.keyboard.latin.gesturetyping
 import android.content.Context
 import androidx.core.content.edit
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 
 /**
  * Persists per-word gesture acceptance counts so that Zeliboard can boost the
