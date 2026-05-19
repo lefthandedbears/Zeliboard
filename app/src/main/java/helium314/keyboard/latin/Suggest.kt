@@ -24,6 +24,7 @@ import helium314.keyboard.latin.suggestions.SuggestionStripView
 import android.content.Context
 import helium314.keyboard.latin.gesturetyping.GesturePersonalization
 import helium314.keyboard.latin.gesturetyping.GlideTypingClassifier
+import helium314.keyboard.latin.utils.JniUtils
 import helium314.keyboard.latin.utils.AutoCorrectionUtils
 import helium314.keyboard.latin.utils.Log
 import helium314.keyboard.latin.utils.SuggestionResults
@@ -272,20 +273,23 @@ class Suggest(private val mDictionaryFacilitator: DictionaryFacilitator, private
         settingsValuesForSuggestion: SettingsValuesForSuggestion,
         inputStyle: Int, isCorrectionEnabled: Boolean, sequenceNumber: Int
     ): SuggestedWords {
-        var suggestionResults = mDictionaryFacilitator.getSuggestionResults(
-            wordComposer.composedDataSnapshot, ngramContext, keyboard,
-            settingsValuesForSuggestion, SESSION_ID_GESTURE, inputStyle
-        )
+        // Zeliboard: use our on-device GlideTypingClassifier first.
+        // We deliberately skip the native getSuggestionResults() call in batch mode when the
+        // gesture library is absent — passing batch-mode ComposedData into the C++ dictionary
+        // without the gesture engine loaded causes a native crash (SIGSEGV), not a Java
+        // exception, so the surrounding try-catch cannot protect against it.
+        var suggestionResults = getGlideTypingSuggestions(
+            wordComposer.composedDataSnapshot.mInputPointers, keyboard,
+            ngramContext, settingsValuesForSuggestion, inputStyle
+        ) ?: SuggestionResults(0, false, false)
 
-        // When no native gesture library is available, fall back to Zeliboard's on-device
-        // GlideTypingClassifier (ported from FlorisBoard, Apache 2.0).  We seed it with
-        // typing-mode suggestions for the first letter of the gesture so it has real
-        // dictionary candidates to rank — no network calls, fully private.
-        if (suggestionResults.isEmpty()) {
-            suggestionResults = getGlideTypingSuggestions(
-                wordComposer.composedDataSnapshot.mInputPointers, keyboard,
-                ngramContext, settingsValuesForSuggestion, inputStyle
-            ) ?: suggestionResults
+        // Fall back to the native path only when the gesture library is actually loaded —
+        // in that case the C++ engine can safely decode the batch input pointers.
+        if (suggestionResults.isEmpty() && JniUtils.sHaveGestureLib) {
+            suggestionResults = mDictionaryFacilitator.getSuggestionResults(
+                wordComposer.composedDataSnapshot, ngramContext, keyboard,
+                settingsValuesForSuggestion, SESSION_ID_GESTURE, inputStyle
+            )
         }
 
         // For transforming words that don't come from a dictionary, because it's our best bet
