@@ -10,8 +10,10 @@ import com.android.inputmethod.latin.utils.BinaryDictionaryUtils
 import helium314.keyboard.keyboard.Keyboard
 import helium314.keyboard.keyboard.internal.keyboard_parser.getEmojiDefaultVersion
 import helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo
+import helium314.keyboard.latin.WordComposer
 import helium314.keyboard.latin.common.ComposedData
 import helium314.keyboard.latin.common.Constants
+import helium314.keyboard.latin.common.CoordinateUtils
 import helium314.keyboard.latin.common.InputPointers
 import helium314.keyboard.latin.common.StringUtils
 import helium314.keyboard.latin.define.DebugFlags
@@ -375,9 +377,12 @@ class Suggest(private val mDictionaryFacilitator: DictionaryFacilitator, private
         val firstY = inputPointers.yCoordinates[0]
         val nearestKeys = keyboard.getNearestKeys(firstX, firstY)
         val firstKey = nearestKeys.firstOrNull { Character.isLetter(it.code) } ?: return null
-        val firstChar = Character.toLowerCase(firstKey.code).toChar().toString()
 
-        val seedComposedData = ComposedData.createForWord(firstChar)
+        val centerX = firstKey.x + firstKey.width / 2
+        val centerY = firstKey.y + firstKey.height / 2
+        val codePoints = IntArray(1) { Character.toLowerCase(firstKey.code) }
+        val coordinates = CoordinateUtils.newCoordinateArray(1, centerX, centerY)
+        val seedComposedData = WordComposer().apply { setComposingWord(codePoints, coordinates) }.composedDataSnapshot
         val typingCandidates = mDictionaryFacilitator.getSuggestionResults(
             seedComposedData, ngramContext, keyboard,
             settingsValuesForSuggestion, SESSION_ID_TYPING, inputStyle
