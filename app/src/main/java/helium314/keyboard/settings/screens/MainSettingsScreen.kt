@@ -75,14 +75,13 @@ fun MainSettingsScreen(
                     onClick = onClickToolbar,
                     icon = R.drawable.ic_settings_toolbar
                 ) { NextScreenIcon() }
-                if (JniUtils.sHaveGestureLib)
-                    Preference(
-                        name = stringResource(R.string.settings_screen_gesture),
-                        onClick = onClickGestureTyping,
-                        icon = R.drawable.ic_settings_gesture
-                    ) { NextScreenIcon() }
+                Preference(
+                    name = stringResource(R.string.settings_screen_gesture),
+                    onClick = onClickGestureTyping,
+                    icon = R.drawable.ic_settings_gesture
+                ) { NextScreenIcon() }
                 // we don't even show the menu if data gathering phase ended more than 2 weeks ago
-                if (JniUtils.sHaveGestureLib && System.currentTimeMillis() < END_DATE_EPOCH_MILLIS + TWO_WEEKS_IN_MILLIS)
+                if (false && JniUtils.sHaveGestureLib && System.currentTimeMillis() < END_DATE_EPOCH_MILLIS + TWO_WEEKS_IN_MILLIS)
                     Preference(
                         name = stringResource(R.string.gesture_data_screen),
                         onClick = onClickDataGathering,
