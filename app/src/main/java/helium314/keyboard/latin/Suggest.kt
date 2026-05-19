@@ -392,7 +392,12 @@ class Suggest(private val mDictionaryFacilitator: DictionaryFacilitator, private
         var rankedCandidates = GlideTypingClassifier.getSuggestions(
             inputPointers, keyboard, typingCandidates.toList()
         )
-        if (rankedCandidates.isEmpty()) return null
+
+        // If the shape classifier eliminated everything (e.g. gesture too short or ambiguous),
+        // fall back to the dictionary's own frequency ordering so swipe always shows results.
+        if (rankedCandidates.isEmpty()) {
+            rankedCandidates = typingCandidates.toList()
+        }
 
         // Apply per-user acceptance boosts so frequently-gestured words rank higher
         context?.let { ctx ->

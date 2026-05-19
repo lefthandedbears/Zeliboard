@@ -28,12 +28,12 @@ object GlideTypingClassifier {
 
     private const val RESAMPLE_COUNT = 100
     private const val MAX_SUGGESTIONS = 8
-    // Shape-match bandwidth in normalised key-size units; larger = more tolerant
-    private const val SIGMA = 0.35f
+    // Shape-match bandwidth in normalised key-size units; 1.5 = tolerant enough to handle
+    // natural gesture variation without float underflow (exp underflows to 0 for SIGMA<0.5
+    // when shapeDist exceeds ~3 key-widths, which is common on non-matching words)
+    private const val SIGMA = 1.5f
     // Minimum gesture displacement (px) before we attempt decoding
     private const val MIN_GESTURE_DISPLACEMENT = 10f
-    // Minimum score to include a candidate
-    private const val MIN_SCORE = 0f
 
     /**
      * Decode a gesture into word candidates.
@@ -94,9 +94,7 @@ object GlideTypingClassifier {
             val freqNorm = (wordInfo.mScore.toFloat() / maxCandidateScore).coerceIn(0f, 1f)
             val combined = shapeScore * (0.7f + 0.3f * freqNorm)
 
-            if (combined > MIN_SCORE) {
-                scored += Pair(wordInfo, combined)
-            }
+            scored += Pair(wordInfo, combined)
         }
 
         return scored
